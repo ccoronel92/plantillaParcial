@@ -1,21 +1,22 @@
+import losSimpson.conductoresPrincipales
 import java.time.DayOfWeek
 
 //PUNTO 1
 
 open class Programa(var titulo: String,
-                    var conductoresPrincipales: MutableSet<String>,
+                    var conductoresPrincipales: MutableList<String>,
                     var presupuestoBase: Double,
                     var sponsorsPublicidad: MutableSet<String>,
                     //var dia:String = "Lunes",
                     var dia: DayOfWeek = DayOfWeek.MONDAY, //String no es buena idea si quiero trabajar con los días después
                     var duracion: Int,
                     //var restricciones:MutableSet<Restriccion>), --Al programa no le interesa saber las restricciones que se le aplican
-                    var ultimosRatings: MutableList<Double>) {
+                    var ratings: MutableList<Double>) { //cambio nombre para que quede más claro
 
     //var ratingsEnLista=5 --No me sirve de nada esto
 
     //Estos métodos me sirven para conseguir la información necesaria en Restricciones
-    fun ultimosCincoRatings() = ultimosRatings.takeLast(5) //Conocemos los últimos 5 ratings
+    fun ultimosCincoRatings() = ratings.takeLast(5) //Conocemos los últimos 5 ratings
     fun promedioCincoRatings() = ultimosCincoRatings().average()
     fun cantidadConductores() = conductoresPrincipales.count()
     fun tieneConductor(conductorEstrella: String) = conductoresPrincipales.contains(conductorEstrella)
@@ -26,15 +27,32 @@ open class Programa(var titulo: String,
     //fun agregarConductor(conductor: String){conductoresPrincipales.add(conductor)}
     //fun quitarConductor(conductor: String){conductoresPrincipales.remove(conductor)}
     //fun setPresupuesto(nuevoPresupuesto:Double){presupuestoBase=nuevoPresupuesto}
-    //fun agregarSponsor(sponsor: String){sponsorsPublicidad.add(sponsor)}
-    //fun quitarSponsor(sponsor: String){sponsorsPublicidad.remove(sponsor)}
+    fun agregarSponsor(sponsor: String){sponsorsPublicidad.add(sponsor)}
+    fun quitarSponsor(sponsor: String){sponsorsPublicidad.remove(sponsor)}
     //fun setDia(nuevoDia: String){dia=nuevoDia}
     //fun setDuracion(nuevaDuracion: Int){duracion=nuevaDuracion}
 
-    fun agregarRating(nuevoRating: Double) { //?? Funciona igual para settear las listas?
+    fun agregarRating(nuevoRating: Double) {
         //validarCantidadRating(ultimosRatings) --No hay que validar nada
-        ultimosRatings.add(nuevoRating)
+        ratings.add(nuevoRating)
     }
+
+    fun agregarConductor(conductor: String){conductoresPrincipales.add(conductor)}
+    fun primerConductor() = conductoresPrincipales.first()
+
+    fun palabraDelTituloEnPosicion(titulo: String, posicion: Int): String {
+        val palabras = titulo.split(" ")
+        return if (palabras.count() == 2) palabras[posicion] else "Programa Sin Nombre"
+    }
+
+    fun cambiarAlsiguienteDia() {
+        dia= diaSiguiente()
+    }
+
+    fun diaSiguiente() = dia.plus(1)
+
+    fun primeraMitadConductores(mitadCantidadConnductores: Int) = conductoresPrincipales.take(mitadCantidadConnductores).toMutableList()
+    fun conductoresRestantes(conductoresRestantes: Int) = conductoresPrincipales.takeLast(conductoresRestantes).toMutableList()
 
     // FIXME: esto no está pedido
     //fun validarCantidadRating(ultimosRatings: MutableList<Double>){
@@ -47,7 +65,7 @@ open class Programa(var titulo: String,
 
 }
 
-interface Restriccion{
+ abstract class Restriccion{ //cambio a clase porque tiene un parametro
 
     // FIXME: no hay que hacer esto, simplemente necesitamos saber si la condición se cumple o no
     //  justamente por eso se separa la restricción de la acción
@@ -59,28 +77,31 @@ interface Restriccion{
     //    programa.restricciones.add(this)}
     //}
 
-    fun cumpleCondicion(programa: Programa): Boolean //Le cambio el nombre para que se entienda mejor
+    lateinit var accionAsociada: Accion
 
-    fun ejecutar(programa:Programa)
+    abstract fun cumpleCondicion(programa: Programa): Boolean //Le cambio el nombre para que se entienda mejor
+
+    fun ejecutarAccionAsociada(programa: Programa) {accionAsociada.ejecutarAccion(programa)}
+    //fun ejecutar(programa:Programa) --Esto no va acá
 
 }
 
-object promedioRating:Restriccion {
+ class promedioRating: Restriccion() {
 
    private var ratingPromedioNecesario=5 //Cambio nombre para que se entienda más
 
     //override fun cumpleCondicion(programa:Programa): Boolean = programa.ultimosRatings.average()>ratingPromedio
-    override fun cumpleCondicion(programa:Programa): Boolean = programa.promedioCincoRatings() > ratingPromedioNecesario
+    override fun cumpleCondicion(programa:Programa) = programa.promedioCincoRatings() > ratingPromedioNecesario
 
     //fun setRatingPromedio(nuevoPromedio: Int){ratingPromedio=nuevoPromedio} --No sirve de nada el setter
 
     // FIXME: la idea era que se pudiera configurar el día, pero más allá de eso estás confundiendo la
     //  restricción con la acción
     //override fun ejecutar(programa:Programa){programa.setDia(nuevoDia="martes")}
-    override fun ejecutar(programa:Programa){} //A implementar
+    //override fun ejecutar(programa:Programa){} //A implementar
 }
 
-object maximoConductores:Restriccion {
+class maximoConductores: Restriccion() {
 
     private var maximoConductores=3
 
@@ -88,11 +109,11 @@ object maximoConductores:Restriccion {
 
     //fun setMaximoConductores(nuevoMaximo: Int){maximoConductores=nuevoMaximo} --No me sirve el setter
 
-    override fun ejecutar(programa:Programa){} //A implementar
+    //override fun ejecutar(programa:Programa){} //A implementar
 
 }
 
-object conductoresEstrella:Restriccion {
+class conductoresEstrella: Restriccion() {
 
     private var conductorEstrella= "Pinky"
 
@@ -101,11 +122,11 @@ object conductoresEstrella:Restriccion {
 
     //fun agregarConductorEstrella(conductor: String){conductorEstrella=conductor} --No sirve el setter
 
-    override fun ejecutar(programa:Programa){} //A implementar
+    //override fun ejecutar(programa:Programa){} //A implementar
 
 }
 
-object excedePresupuesto:Restriccion {
+class excedePresupuesto: Restriccion() {
 
     private var presupuestoMaximo= 10000.00
 
@@ -113,7 +134,7 @@ object excedePresupuesto:Restriccion {
 
     //fun setPresupuestoMaximo(nuevoValor: Double){presupuestoMaximo=nuevoValor}--No sirve el setter
 
-    override fun ejecutar(programa:Programa){} //A implementar
+    //override fun ejecutar(programa:Programa){} //A implementar
 
 }
 
@@ -137,11 +158,11 @@ object excedePresupuesto:Restriccion {
 
 //}
 
-abstract class RestriccionCombinada(var restricciones:MutableSet<Restriccion>): Restriccion {
+abstract class RestriccionCombinada(var restricciones:MutableSet<Restriccion>): Restriccion() {
 
     override fun cumpleCondicion(programa: Programa): Boolean = condicionEspecifica(programa)
 
-    override fun ejecutar(programa: Programa) {}
+    //override fun ejecutar(programa: Programa) {}
 
     abstract fun condicionEspecifica(programa: Programa): Boolean
 
@@ -164,59 +185,208 @@ class cumpleAlgunaRestriccion(restricciones: MutableSet<Restriccion>) : Restricc
 // FIXME: falta implementar más acciones (se pedían 3 de 4)
 
 // FIXME: me suena a un objeto que tiene poca responsabilidad, es un objeto anémico
-object grillaDeProgramacion{
-     lateinit var programas: MutableSet<Programa>
-}
+//object grillaDeProgramacion{
+//     lateinit var programas: MutableSet<Programa>
+//}
+
+// //Es más útil tener un administrador que tenga acceso a la grilla de programación, lo dejo en el punto 3
 
 
 // FIXME: se usa en singular: Accion
-abstract class Acciones{
-    abstract fun ejecutarAccion(programa:Programa)
+//abstract class Acciones{
+
+interface Accion{ //no tiene variables, puede ser interface
+        abstract fun ejecutarAccion(programa:Programa)
 }
 
-class partirPrograma(programa: Programa):Acciones(){
+object partirPrograma:Accion{
+
     override fun ejecutarAccion(programa: Programa) {
+        programaPartidoBuilder.build(programa)
     }
+
 }
 
-class quitarPrograma(programa: Programa):Acciones(){
+class quitarPrograma:Accion{
+
     override fun ejecutarAccion(programa: Programa) {
         // FIXME: falta delegar
-        grillaDeProgramacion.programas.remove(programa)
-        grillaDeProgramacion.programas.add(losSimpson)
+        //encargado.grillaDeProgramacion.remove(programa)
+        //encargado.grillaDeProgramacion.add(losSimpson)
+        encargado.reemplazarPrograma(programa)
+    }
+
+}
+
+class fusionarPrograma:Accion{
+
+    override fun ejecutarAccion(programa: Programa) {}//TODO:A Implementar
+
+}
+
+class moverDia:Accion{
+
+    override fun ejecutarAccion(programa: Programa) {
+        programa.cambiarAlsiguienteDia()
+    }
+
+}
+
+object programaPartidoBuilder {
+
+    lateinit var primerPrograma: Programa
+    lateinit var segundoPrograma: Programa
+    lateinit var programasGenerados: MutableList<Programa>
+
+    fun conductoresPrincipales(programa:Programa){
+
+        var mitadCantidadConnductores = (programa.cantidadConductores()/2)
+        var conductoresRestantes = programa.cantidadConductores()-mitadCantidadConnductores
+
+        primerPrograma.conductoresPrincipales = programa.primeraMitadConductores(mitadCantidadConnductores)
+        segundoPrograma.conductoresPrincipales = programa.conductoresRestantes(conductoresRestantes)
+
+    }
+
+    fun presupuesto(programa:Programa){
+
+        var mitadPresupuesto = programa.presupuestoBase/2
+
+        primerPrograma.presupuestoBase = mitadPresupuesto
+        segundoPrograma.presupuestoBase = mitadPresupuesto
+
+    }
+
+    fun sponsors(programa:Programa){
+
+        var sponsors = programa.sponsorsPublicidad
+
+        primerPrograma.sponsorsPublicidad = sponsors
+        segundoPrograma.sponsorsPublicidad = sponsors
+    }
+
+    fun duracion(programa:Programa){
+
+        var duracion = programa.duracion/2
+
+        primerPrograma.duracion = duracion
+        segundoPrograma.duracion = duracion
+
+    }
+
+    fun titulos(programa:Programa){
+
+
+        var primeraPalabra = programa.palabraDelTituloEnPosicion(programa.titulo,0)
+        var segundaPalabra = programa.palabraDelTituloEnPosicion(programa.titulo,1)
+
+        primerPrograma.titulo = "{$primeraPalabra} en el Aire!"
+        segundoPrograma.titulo = "$segundaPalabra"
+
+    }
+
+    fun dias(programa:Programa){
+
+        var dia = programa.dia
+
+        primerPrograma.dia=dia
+        segundoPrograma.dia=dia
+
+    }
+
+    fun build(programa: Programa):MutableList<Programa>{
+
+        conductoresPrincipales(programa)
+        presupuesto(programa)
+        sponsors(programa)
+        duracion(programa)
+        titulos(programa)
+        dias(programa)
+
+        programasGenerados.add(primerPrograma)
+        programasGenerados.add(segundoPrograma)
+
+        return programasGenerados
+
     }
 
 }
 
 
-object losSimpson: Programa("Los Simpson", mutableSetOf("conductor"),1000.00,
-    mutableSetOf("Unsam"),"Lunes",250,mutableListOf(1.2,2.5,1.6,1.6,1.7),mutableSetOf())
+object losSimpson: Programa("Los Simpson", mutableListOf("conductor"),1000.00,
+    mutableSetOf("Unsam"),DayOfWeek.MONDAY,250,mutableListOf(1.2,2.5,1.6,1.6,1.7))
+
 
 //PUNTO 3
 
 // FIXME: falta implementar lo que ocurre al agregar un programa
-object encargado{
 
+open class AdministradorDeProgramacion(var grillaDeProgramacion: MutableList<Programa>) {
+
+    lateinit var restricciones: MutableList<Restriccion>
     lateinit var programasArevisar: MutableSet<Programa>
 
-    // FIXME: es un misplaced method, no debería estar acá
-    fun definirRestricciones(programa:Programa, restriccion: Restriccion){
-        programa.restricciones.add(restriccion)
+    fun agregarAgrilla(programa: Programa){grillaDeProgramacion.add(programa)}
+    fun quitarDeGrilla(programa: Programa){grillaDeProgramacion.remove(programa)}
+
+    fun agregarRestriccion(restriccion: Restriccion) {restricciones.add(restriccion)}
+    fun quitarRestriccion(restriccion: Restriccion){restricciones.remove(restriccion)}
+
+    fun agregarProgramaArevisar(programa: Programa){programasArevisar.add(programa)}
+    fun quitarProgramaArevisar(programa: Programa){programasArevisar.remove(programa)}
+
+    fun reemplazarPrograma(programa: Programa){
+        losSimpson.dia=programa.dia //seteo el día, que sea el mismo que el programa reemplazado
+        losSimpson.duracion=programa.duracion //al igual que la duracion
+        quitarDeGrilla(programa)
+        agregarAgrilla(losSimpson)
     }
 
-    fun ejecutarRestricciones(programa: Programa){
-        // FIXME: delegar al programa
-        programa.restricciones.forEach{it.ejecutar(programa)}
-    }
-
-    fun agregarProgramaArevisar(programa:Programa){
-        programasArevisar.add(programa)
-    }
+    fun definirAccion(restriccion: Restriccion,accion: Accion) {restriccion.accionAsociada=accion}
 
     fun procesoDeRevision(){
-        programasArevisar.forEach{this.ejecutarRestricciones(it)}
+
+        for (programa in programasArevisar) {
+
+            for (restriccion in restricciones) {
+
+                if(restriccion.cumpleCondicion(programa)){
+                    restriccion.ejecutarAccionAsociada(programa)
+                    break
+                    }
+
+            }
+
+        }
+
     }
-}
+
+    }
+
+object encargado :AdministradorDeProgramacion(grillaDeProgramacion = mutableListOf(losSimpson))
+
+//object encargado{
+
+ //   lateinit var programasArevisar: MutableSet<Programa>
+
+    // FIXME: es un misplaced method, no debería estar acá
+   // fun definirRestricciones(programa:Programa, restriccion: Restriccion){
+        //programa.restricciones.add(restriccion)
+    //}
+
+    //fun ejecutarRestricciones(programa: Programa){
+        // FIXME: delegar al programa
+        //programa.restricciones.forEach{it.ejecutar(programa)}
+ //   }
+
+    //fun agregarProgramaArevisar(programa:Programa){
+    //    programasArevisar.add(programa)
+    //}
+
+    //fun procesoDeRevision(){
+    //    programasArevisar.forEach{this.ejecutarRestricciones(it)}
+    //}
+//}
 
 //
 //Las ideas de diseño que se me surgieron fueron:
